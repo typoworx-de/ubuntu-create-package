@@ -31,9 +31,14 @@ then
 fi
 
 rm -rf ${_build}/*;
-ln ${_src}/imapsync ${_build};
 
-_version=$(${_build}/imapsync --version);
+# Important always use Prefix'ed paths
+# -> /usr/local/{bin,share} etc.
+mkdir -p ${_dir}/build/usr/local/bin;
+
+ln ${_src}/imapsync ${_build}/usr/local/bin;
+
+_version=$(${_src}/imapsync --version);
 _arch='all';
 _size=$(du -sb ${_dir}/build | cut -f1);
 
