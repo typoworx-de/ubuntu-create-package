@@ -1,31 +1,46 @@
 #!/bin/bash
-_dir=$(dirname $0);
+_dir=$(realpath $(dirname $0));
+_package=$(basename ${_dir});
+
+_src="${_dir}/src";
+_build="${_dir}/build";
+
+# Package maintainer & description
 _maintainer='gkn@typoworx.com';
 _description='Tool to sync IMAP-Servers';
 
-if [[ ! -d src/.git ]];
+
+if [[ ! -d ${_dir}/src/.git ]];
 then
-  cd ${_dir}; git clone https://github.com/imapsync/imapsync src || exit 1;
+  git clone https://github.com/imapsync/imapsync src || exit 1;
 fi
+
+cd ${_src};
 
 # Optional!
 # Checkout latest tag
-cd ${_dir}/src; git checkout $(cd ${_dir}/src; git tag | tail -n 1);
+git checkout $(git tag | tail -n 1);
 
 #- Install some required Perl/CPAN Modules
 #- ${_dir}/src/INSTALL.d/prerequisites_imapsync || exit 1;
 
-if [[ ! -d ${_dir}/dist2 ]];
+if [[ ! -d ${_dir}/build ]];
 then
-  mkdir ${_dir}/dist2;
+  echo "Create build dir";
+  mkdir ${_dir}/build;
 fi
 
-ln ${_dir}/imapsync ${_dir}/dist2/;
+rm -rf ${_build}/*;
+ln ${_src}/imapsync ${_build};
 
-_package=$(cd ${_dir}; basename $(realpath $(dirname $0)));
-_version=$(${_dir}/imapsync --version);
+_version=$(${_build}/imapsync --version);
 _arch='all';
-_size=$(du -sb ${_dir}/dist2 | cut -f1);
+_size=$(du -sb ${_dir}/build | cut -f1);
+
+if [[ ! -d ${_build}/DEBIAN ]];
+then
+  mkdir ${_build}/DEBIAN;
+fi
 
 echo \
 "Package: ${_package}
@@ -36,6 +51,14 @@ Architecture: ${_arch}
 Essential: no
 Installed-Size: 1024
 Maintainer: ${_maintainer}
-Description: ${_description}" > DEBIAN/control
+Description: ${_description}" > ${_build}/DEBIAN/control;
 
-dpkg-deb --build . .
+if [[ -f ${_build}/DEBIAN/control ]];
+then
+  dpkg-deb --build ${_build} ${_dir} && {
+    echo "Done";
+  } || {
+    echo "Error";
+    exit 1;
+  }
+fi
