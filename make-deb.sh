@@ -1,6 +1,7 @@
 #!/bin/bash
 _dir=$(realpath $(dirname $0));
 _package=$(basename ${_dir});
+_version='master';
 
 _src="${_dir}/src";
 _build="${_dir}/build";
@@ -19,7 +20,15 @@ cd ${_src};
 
 # Optional!
 # Checkout latest tag
-git checkout $(git tag | tail -n 1);
+if [[ -z "${_version}" ]];
+then
+  git checkout $(git tag | tail -n 1);
+else
+  git checkout ${_version} || {
+    echo "Unknown branch/version ${${_version}}";
+    exit 1;
+  }
+fi
 
 #- Install some required Perl/CPAN Modules
 #- ${_dir}/src/INSTALL.d/prerequisites_imapsync || exit 1;
@@ -56,7 +65,9 @@ Architecture: ${_arch}
 Essential: no
 Installed-Size: 1024
 Maintainer: ${_maintainer}
-Description: ${_description}" > ${_build}/DEBIAN/control;
+Description: ${_description}
+Replaces: ${_package}" > ${_build}/DEBIAN/control;
+
 
 if [[ -f ${_build}/DEBIAN/control ]];
 then
